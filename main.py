@@ -18,6 +18,7 @@ from state.state import AppState
 from components.page_scaffold import page_scaffold
 from pages.audio_demo import audio_demo_content
 from pages.video_demo import video_demo_content
+from pages.tool_demo import tool_demo_content
 
 
 def on_load(e: me.LoadEvent):  # pylint: disable=unused-argument
@@ -57,3 +58,20 @@ def video_demo():
   state = me.state(AppState)
   with page_scaffold():  # pylint: disable=not-context-manager
     video_demo_content(state)
+
+
+@me.page(
+  path="/tool_demo",
+  title="tool Demo",
+  security_policy=me.SecurityPolicy(
+    allowed_script_srcs=[
+      "https://cdn.jsdelivr.net",
+    ]
+  ),
+  on_load=on_load,
+)
+def tool_demo():
+  """Main Page"""
+  state = me.state(AppState)
+  with page_scaffold():  # pylint: disable=not-context-manager
+    tool_demo_content(state)
