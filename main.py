@@ -17,6 +17,7 @@ import mesop as me
 from state.state import AppState
 from components.page_scaffold import page_scaffold
 from pages.audio_demo import audio_demo_content
+from pages.video_demo import video_demo_content
 
 
 def on_load(e: me.LoadEvent):  # pylint: disable=unused-argument
@@ -34,8 +35,25 @@ def on_load(e: me.LoadEvent):  # pylint: disable=unused-argument
   ),
   on_load=on_load,
 )
-def home_page():
+def audio_demo():
   """Main Page"""
   state = me.state(AppState)
   with page_scaffold():  # pylint: disable=not-context-manager
     audio_demo_content(state)
+
+
+@me.page(
+  path="/video_demo",
+  title="Video Demo",
+  security_policy=me.SecurityPolicy(
+    allowed_script_srcs=[
+      "https://cdn.jsdelivr.net",
+    ]
+  ),
+  on_load=on_load,
+)
+def video_demo():
+  """Main Page"""
+  state = me.state(AppState)
+  with page_scaffold():  # pylint: disable=not-context-manager
+    video_demo_content(state)
