@@ -26,6 +26,7 @@ from styles.styles import (
 
 
 page_json = [
+  {"display": "Home", "icon": "home", "route": "/"},
   {"display": "Audio Demo", "icon": "headphones", "route": "/audio_demo"},
   {"display": "Video Demo", "icon": "videocam", "route": "/video_demo"},
   {"display": "Tool Demo", "icon": "construction", "route": "/tool_demo"},

@@ -16,6 +16,7 @@ import mesop as me
 
 from state.state import AppState
 from components.page_scaffold import page_scaffold
+from pages.home import home_content
 from pages.audio_demo import audio_demo_content
 from pages.video_demo import video_demo_content
 from pages.tool_demo import tool_demo_content
@@ -24,6 +25,23 @@ from pages.tool_demo import tool_demo_content
 def on_load(e: me.LoadEvent):  # pylint: disable=unused-argument
   """On load event"""
   me.set_theme_mode("system")
+
+
+@me.page(
+  path="/",
+  title="Mesop / Gemini Experiments",
+  security_policy=me.SecurityPolicy(
+    allowed_script_srcs=[
+      "https://cdn.jsdelivr.net",
+    ]
+  ),
+  on_load=on_load,
+)
+def home_demo():
+  """Main Page"""
+  state = me.state(AppState)
+  with page_scaffold():  # pylint: disable=not-context-manager
+    home_content(state)
 
 
 @me.page(
