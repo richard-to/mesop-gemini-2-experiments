@@ -85,7 +85,6 @@ class GeminiLiveLoop:
     self.out_queue = None
 
     self.ws = None
-    self.audio_stream = None
 
   async def startup(self):
     setup_msg = {
@@ -116,6 +115,22 @@ class GeminiLiveLoop:
     await self.ws.send(json.dumps(setup_msg))
     raw_response = await self.ws.recv(decode=False)
     json.loads(raw_response.decode("ascii"))
+
+  async def send_video_direct(self, data):
+    """Sends video input chunks to Gemini."""
+
+    msg = {
+      "realtime_input": {
+        "media_chunks": [
+          {
+            "data": data,
+            "mime_type": "image/jpeg",
+          }
+        ]
+      }
+    }
+
+    await self.ws.send(json.dumps(msg))
 
   async def send_audio_direct(self, data):
     """Sends audio input chunks to Gemini.

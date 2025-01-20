@@ -40,22 +40,37 @@ _API_KEY = os.getenv("GOOGLE_API_KEY")
 _GEMINI_BIDI_WEBSOCKET_URI = f"wss://{_HOST}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={_API_KEY}"
 
 
-_AUDIO_LOOP_MAP = {}
+_GEMINI_LIVE_LOOP_MAP = {}
 
 
-class AudioLoop:
+class GeminiLiveLoop:
   def __init__(self):
     self.audio_in_queue = None
     self.out_queue = None
 
     self.ws = None
-    self.audio_stream = None
 
   async def startup(self):
     setup_msg = {"setup": {"model": f"models/{_MODEL}"}}
     await self.ws.send(json.dumps(setup_msg))
     raw_response = await self.ws.recv(decode=False)
     json.loads(raw_response.decode("ascii"))
+
+  async def send_video_direct(self, data):
+    """Sends video input chunks to Gemini."""
+
+    msg = {
+      "realtime_input": {
+        "media_chunks": [
+          {
+            "data": data,
+            "mime_type": "image/jpeg",
+          }
+        ]
+      }
+    }
+
+    await self.ws.send(json.dumps(msg))
 
   async def send_audio_direct(self, data):
     """Sends audio input chunks to Gemini.
@@ -209,13 +224,13 @@ def on_audio_record(e: mel.WebEvent):
 
 async def initialize_gemini_api(e: me.ClickEvent):
   """Initializes a long running event handler to send audio response data to the client."""
-  global _AUDIO_LOOP_MAP
+  global _GEMINI_LIVE_LOOP_MAP
   state = me.state(State)
   state.gemini_connection_enabled = True
   yield
-  if state.session_id not in _AUDIO_LOOP_MAP:
-    _AUDIO_LOOP_MAP[state.session_id] = AudioLoop()
-    async for bytestream in _AUDIO_LOOP_MAP[state.session_id].run():
+  if state.session_id not in _GEMINI_LIVE_LOOP_MAP:
+    _GEMINI_LIVE_LOOP_MAP[state.session_id] = GeminiLiveLoop()
+    async for bytestream in _GEMINI_LIVE_LOOP_MAP[state.session_id].run():
       me.state(State).data = bytestream
       yield
 
@@ -226,10 +241,10 @@ async def stream_audio_input(e: mel.WebEvent):
   Unfortunately it does not seem to handle cancellation of the system audio, so we need
   to use headphones for simplicity here.
   """
-  global _AUDIO_LOOP_MAP
+  global _GEMINI_LIVE_LOOP_MAP
   state = me.state(State)
-  if state.session_id in _AUDIO_LOOP_MAP:
-    await _AUDIO_LOOP_MAP[state.session_id].send_audio_direct(e.value["data"])
+  if state.session_id in _GEMINI_LIVE_LOOP_MAP:
+    await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_audio_direct(e.value["data"])
 
 
 def on_input_blur(e: me.InputBlurEvent):
@@ -239,8 +254,8 @@ def on_input_blur(e: me.InputBlurEvent):
 
 async def send_text_input(e: me.ClickEvent):
   """We can also send normal text prompts to Gemini."""
-  global _AUDIO_LOOP_MAP
+  global _GEMINI_LIVE_LOOP_MAP
   state = me.state(State)
-  if state.session_id in _AUDIO_LOOP_MAP and state.prompt:
-    await _AUDIO_LOOP_MAP[state.session_id].send_text_direct(state.prompt)
+  if state.session_id in _GEMINI_LIVE_LOOP_MAP and state.prompt:
+    await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_text_direct(state.prompt)
     state.prompt = ""
