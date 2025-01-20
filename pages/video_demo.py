@@ -2,6 +2,10 @@
 
 This demo focuses only on video input and audio output.
 
+In this demo you can type in questions about the video input, such as what do you see?
+
+You could also take this a step further and add audio input as well.
+
 Ideally, we'd use WebRTC, but for demos, websockets should be good enough for handling
 the streaming video input and audio output.
 

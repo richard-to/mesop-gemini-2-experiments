@@ -1,15 +1,21 @@
-"""Demo of using Gemini 2 API with websockets and Mesop.
+"""Tool usage demo of using Gemini 2 API with websockets and Mesop.
 
-This demo focuses only on audio input and output. In other words, the user can chat with
-Gemini by talking, and Gemini will respond with audio.
+This demo focuses on tool usage and integration with Mesop.
+
+Here we create three boxes. The user can click on the box and Gemini will respond with
+the question in the box.
+
+In addition the user can use text input or audio input to ask Gemini to open the box
+and read the contents inside the box.
+
+The state of the boxes will change as the user and Gemini interact with the boxes.
 
 This demo requires headphones since system audio cancellation isn't implemented.
 
-Ideally, we'd use WebRTC, but for demos, websockets should be good enough for handling
-the streaming audio input and output.
+This demo is based off the examples at:
 
-This demo is based off the example at:
-https://github.com/google-gemini/cookbook/blob/main/gemini-2/websockets/live_api_starter.py
+- https://github.com/google-gemini/cookbook/blob/main/gemini-2/websockets/live_api_starter.py
+- https://github.com/google-gemini/cookbook/blob/main/gemini-2/live_api_tool_use.ipynb
 """
 
 import asyncio
