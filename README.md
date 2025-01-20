@@ -29,3 +29,10 @@ This example shows how we can stream video input to Gemini Live and return audio
 ### Tool demo
 
 This example shows how we integrate custom tools that manipulate Mesop state/UI.
+
+## Known issues
+
+- Web socket connection sometimes starts randomly disconnecting. This seems like maybe
+  it is a quota issue.
+- Currently no real error handling for error cases, so if something breaks, just stop
+  the Mesop server and start it again. And reload your web page.
