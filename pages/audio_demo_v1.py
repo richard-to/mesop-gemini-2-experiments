@@ -1,21 +1,15 @@
-"""Tool usage demo of using Gemini 2 API with websockets and Mesop.
+"""Demo of using Gemini 2 API with websockets and Mesop.
 
-This demo focuses on tool usage and integration with Mesop.
-
-Here we create three boxes. The user can click on the box and Gemini will respond with
-the question in the box.
-
-In addition the user can use text input or audio input to ask Gemini to open the box
-and read the contents inside the box.
-
-The state of the boxes will change as the user and Gemini interact with the boxes.
+This demo focuses only on audio input and output. In other words, the user can chat with
+Gemini by talking, and Gemini will respond with audio.
 
 This demo requires headphones since system audio cancellation isn't implemented.
 
-This demo is based off the examples at:
+Ideally, we'd use WebRTC, but for demos, websockets should be good enough for handling
+the streaming audio input and output.
 
-- https://github.com/google-gemini/cookbook/blob/main/gemini-2/websockets/live_api_starter.py
-- https://github.com/google-gemini/cookbook/blob/main/gemini-2/live_api_tool_use.ipynb
+This demo is based off the example at:
+https://github.com/google-gemini/cookbook/blob/main/gemini-2/websockets/live_api_starter.py
 """
 
 import asyncio
@@ -30,10 +24,10 @@ from websockets.asyncio.client import connect
 
 import mesop as me
 import mesop.labs as mel
-from web_components.audio_player import (
+from web_components_v1.audio_player import (
   audio_player,
 )
-from web_components.audio_recorder import (
+from web_components_v1.audio_recorder import (
   audio_recorder,
 )
 
@@ -48,36 +42,6 @@ _GEMINI_BIDI_WEBSOCKET_URI = f"wss://{_HOST}/ws/google.ai.generativelanguage.v1a
 
 _GEMINI_LIVE_LOOP_MAP = {}
 
-_SYSTEM_INSTRUCTIONS = """
-You are an agent that helps people select boxes.
-
-You have access to the following tool:
-- get_box: Gets the contents of a box by name.
-
-Rules:
-- If the user does not select a box. Tell them that the user must select a box name.
-- The user will specify the name of the box. Use the get_box tool. The box will return a
-  question. Ask the user the question.
-""".strip()
-
-
-@me.stateclass
-class State:
-  data: bytes = b""
-  session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-  prompt: str = ""
-  gemini_connection_enabled: bool = False
-  audio_recorder_enabled: bool = False
-  audio_player_enabled: bool = False
-  boxes: dict[str, str] = field(
-    default_factory=lambda: {
-      "green": "Who is the first president?",
-      "blue": "What is the capital of China?",
-      "red": "What is the tallest mountain?",
-    }
-  )
-  opened_boxes: set[str] = field(default_factory=set)
-
 
 class GeminiLiveLoop:
   def __init__(self):
@@ -87,31 +51,7 @@ class GeminiLiveLoop:
     self.ws = None
 
   async def startup(self):
-    setup_msg = {
-      "setup": {
-        "model": f"models/{_MODEL}",
-        "system_instruction": {"role": "user", "parts": [{"text": _SYSTEM_INSTRUCTIONS}]},
-        "tools": [
-          {
-            "functionDeclarations": [
-              {
-                "name": "pick_box",
-                "description": "Picks the box by name",
-                "parameters": {
-                  "type": "OBJECT",
-                  "properties": {"box_name": {"type": "STRING", "description": "Name of the box"}},
-                  "required": ["box_name"],
-                },
-              }
-            ]
-          }
-        ],
-        "generation_config": {
-          "response_modalities": ["audio"],
-          "speech_config": {"voice_config": {"prebuilt_voice_config": {"voice_name": "Puck"}}},
-        },
-      }
-    }
+    setup_msg = {"setup": {"model": f"models/{_MODEL}"}}
     await self.ws.send(json.dumps(setup_msg))
     raw_response = await self.ws.recv(decode=False)
     json.loads(raw_response.decode("ascii"))
@@ -185,38 +125,6 @@ class GeminiLiveLoop:
           while not self.audio_in_queue.empty():
             self.audio_in_queue.get_nowait()
 
-      tool_call = response.pop("toolCall", None)
-      if tool_call is not None:
-        await self.handle_tool_call(tool_call)
-
-  async def handle_tool_call(self, tool_call):
-    state = me.state(State)
-    for fc in tool_call["functionCalls"]:
-      if fc["name"] == "pick_box":
-        response = ""
-        if fc["args"]["box_name"] not in state.boxes:
-          response = "No box found"
-        elif fc["args"]["box_name"] in state.opened_boxes:
-          response = "You already opened that box"
-        else:
-          response = state.boxes[fc["args"]["box_name"]]
-          state.opened_boxes.add(fc["args"]["box_name"])
-
-        msg = {
-          "tool_response": {
-            "function_responses": [
-              {
-                "id": fc["id"],
-                "name": fc["name"],
-                "response": {
-                  "result": response,
-                },
-              }
-            ]
-          }
-        }
-        await self.ws.send(json.dumps(msg))
-
   async def run(self):
     """Yields audio chunks off the input queue."""
     try:
@@ -244,7 +152,17 @@ class GeminiLiveLoop:
       traceback.print_exception(EG)
 
 
-def tool_demo_content(app_state: me.state):
+@me.stateclass
+class State:
+  data: bytes = b""
+  session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+  prompt: str = ""
+  gemini_connection_enabled: bool = False
+  audio_recorder_enabled: bool = False
+  audio_player_enabled: bool = False
+
+
+def audio_demo_content_v1(app_state: me.state):
   state = me.state(State)
   with me.box(style=me.Style(margin=me.Margin.all(20))):
     me.text(
@@ -295,27 +213,6 @@ def tool_demo_content(app_state: me.state):
       )
       me.button("Send prompt", type="flat", color="primary", on_click=send_text_input)
 
-    me.text(
-      "Pick a box",
-      type="headline-5",
-      style=me.Style(margin=me.Margin.symmetric(vertical=15)),
-    )
-    for label, question in state.boxes.items():
-      with me.box(
-        key=label,
-        on_click=click_box,
-        style=me.Style(
-          background=label,
-          cursor="pointer",
-          padding=me.Padding.all(15),
-          margin=me.Margin(bottom=20),
-        ),
-      ):
-        if label in state.opened_boxes:
-          me.text(question, style=me.Style(color="#fff", text_align="center"))
-        else:
-          me.text(label, style=me.Style(color="#fff", text_align="center", font_weight="bold"))
-
 
 def on_audio_play(e: mel.WebEvent):
   me.state(State).audio_player_enabled = True
@@ -362,11 +259,3 @@ async def send_text_input(e: me.ClickEvent):
   if state.session_id in _GEMINI_LIVE_LOOP_MAP and state.prompt:
     await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_text_direct(state.prompt)
     state.prompt = ""
-
-
-async def click_box(e: me.ClickEvent):
-  global _GEMINI_LIVE_LOOP_MAP
-  state = me.state(State)
-  text = "I want to pick the box with the name " + e.key
-  if state.session_id in _GEMINI_LIVE_LOOP_MAP:
-    await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_text_direct(text)

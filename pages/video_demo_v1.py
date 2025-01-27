@@ -1,12 +1,13 @@
 """Demo of using Gemini 2 API with websockets and Mesop.
 
-This demo focuses only on audio input and output. In other words, the user can chat with
-Gemini by talking, and Gemini will respond with audio.
+This demo focuses only on video input and audio output.
 
-This demo requires headphones since system audio cancellation isn't implemented.
+In this demo you can type in questions about the video input, such as what do you see?
+
+You could also take this a step further and add audio input as well.
 
 Ideally, we'd use WebRTC, but for demos, websockets should be good enough for handling
-the streaming audio input and output.
+the streaming video input and audio output.
 
 This demo is based off the example at:
 https://github.com/google-gemini/cookbook/blob/main/gemini-2/websockets/live_api_starter.py
@@ -24,11 +25,11 @@ from websockets.asyncio.client import connect
 
 import mesop as me
 import mesop.labs as mel
-from web_components.audio_player import (
+from web_components_v1.audio_player import (
   audio_player,
 )
-from web_components.audio_recorder import (
-  audio_recorder,
+from web_components_v1.video_recorder import (
+  video_recorder,
 )
 
 
@@ -58,7 +59,6 @@ class GeminiLiveLoop:
 
   async def send_video_direct(self, data):
     """Sends video input chunks to Gemini."""
-
     msg = {
       "realtime_input": {
         "media_chunks": [
@@ -69,7 +69,6 @@ class GeminiLiveLoop:
         ]
       }
     }
-
     await self.ws.send(json.dumps(msg))
 
   async def send_audio_direct(self, data):
@@ -158,11 +157,11 @@ class State:
   session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
   prompt: str = ""
   gemini_connection_enabled: bool = False
-  audio_recorder_enabled: bool = False
+  video_recorder_enabled: bool = False
   audio_player_enabled: bool = False
 
 
-def audio_demo_content(app_state: me.state):
+def video_demo_content_v1(app_state: me.state):
   state = me.state(State)
   with me.box(style=me.Style(margin=me.Margin.all(20))):
     me.text(
@@ -191,12 +190,12 @@ def audio_demo_content(app_state: me.state):
 
     if state.audio_player_enabled:
       me.text(
-        "Step 3a: Start recording audio",
+        "Step 3a: Start recording video",
         type="headline-5",
         style=me.Style(margin=me.Margin.symmetric(vertical=15)),
       )
-      audio_recorder(
-        on_data=stream_audio_input, enabled=state.audio_recorder_enabled, on_record=on_audio_record
+      video_recorder(
+        on_data=stream_video_input, enabled=state.video_recorder_enabled, on_record=on_video_record
       )
 
     if state.audio_player_enabled:
@@ -218,8 +217,8 @@ def on_audio_play(e: mel.WebEvent):
   me.state(State).audio_player_enabled = True
 
 
-def on_audio_record(e: mel.WebEvent):
-  me.state(State).audio_recorder_enabled = True
+def on_video_record(e: mel.WebEvent):
+  me.state(State).video_recorder_enabled = True
 
 
 async def initialize_gemini_api(e: me.ClickEvent):
@@ -235,16 +234,12 @@ async def initialize_gemini_api(e: me.ClickEvent):
       yield
 
 
-async def stream_audio_input(e: mel.WebEvent):
-  """Audio input is forwarded to Gemini which handles the voice activity detection.
-
-  Unfortunately it does not seem to handle cancellation of the system audio, so we need
-  to use headphones for simplicity here.
-  """
+async def stream_video_input(e: mel.WebEvent):
+  """Video input is forwarded to Gemini."""
   global _GEMINI_LIVE_LOOP_MAP
   state = me.state(State)
   if state.session_id in _GEMINI_LIVE_LOOP_MAP:
-    await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_audio_direct(e.value["data"])
+    await _GEMINI_LIVE_LOOP_MAP[state.session_id].send_video_direct(e.value["data"])
 
 
 def on_input_blur(e: me.InputBlurEvent):

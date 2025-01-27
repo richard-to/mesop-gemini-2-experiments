@@ -14,25 +14,25 @@ def home_content(app_state: me.state):
     )
     me.text("Example demos", type="headline-5")
 
-    me.text("Audio demo", type="headline-6")
+    me.text("Audio demo V1", type="headline-6")
     me.text(
       "This example shows how we can stream audio input to Gemini Live and return audio output.",
       style=me.Style(margin=me.Margin(bottom=15)),
     )
     me.link(
       text="Audio Demo",
-      url="/audio_demo",
+      url="/audio_demo_v1",
       style=_LINK_BUTTON_STYLE,
     )
 
-    me.text("Video demo", type="headline-6")
+    me.text("Video demo V1", type="headline-6")
     me.text(
       "This example shows how we can stream video input to Gemini Live and return audio output.",
       style=me.Style(margin=me.Margin(bottom=15)),
     )
     me.link(
       text="Video Demo",
-      url="/video_demo",
+      url="/video_demo_v1",
       style=_LINK_BUTTON_STYLE,
     )
 
@@ -43,7 +43,7 @@ def home_content(app_state: me.state):
     )
     me.link(
       text="Tool Demo",
-      url="/tool_demo",
+      url="/tool_demo_v1",
       style=_LINK_BUTTON_STYLE,
     )
 
