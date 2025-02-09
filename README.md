@@ -5,6 +5,8 @@ with websockets._
 
 The demos here use https://github.com/ghchinoy/studio-scaffold as the initial scaffold.
 
+For a version that performs the web socket connection via Mesop web component, see https://github.com/google/mesop/tree/main/mesop/examples/web_component/gemini_live. That version is more reliable/scalable than the demos here. The main drawback is that it's not really secure to do a direct web socket connection to the Gemini Live API on the JS client since it exposes the API key. To get around that would need to set up a proxy web socket server most likely.
+
 ## Usage demos
 
 Mesops websockets mode is required to use these demos. In addition, you'll need Python
